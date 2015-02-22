@@ -1,3 +1,6 @@
+library(reshape2)
+
+
 ##
 ## runAnalysis 
 ##
@@ -10,7 +13,10 @@ runAnalysis <- function() {
 	rootDirectoryName <- "UCI HAR Dataset"
 	mergedData <- runAnalysisStep1(rootDirectoryName)
 	extractedData <- runAnalysisStep2(mergedData)
-	extractedData$Activity.Label <- runAnalysisStep3(extractedData)
+	extractedData$Activity.Label <- runAnalysisStep3(rootDirectoryName, extractedData)
+	extractedData$Activity.ID <- NULL
+	finalData <- runAnalysisStep5(extractedData)
+	write.table(finalData, file="uciHarTidyDataset.txt", row.name=FALSE)
 }
 
 ##
@@ -44,7 +50,7 @@ runAnalysisStep1 <- function(rootDirectoryName) {
 	xTrainData$Subject.ID <- subjectTrainData[,1]
 	xTestData$Subject.ID <- subjectTestData[,1]
 
-	## merge the data into one dataset by joining on the subject id
+	## merge the x data into one dataset
 	rbind(xTrainData, xTestData)
 }
 
@@ -67,6 +73,19 @@ runAnalysisStep2 <- function(mergedData) {
 ##
 runAnalysisStep3 <- function(rootDirectoryName, mergedData) {
 	activityLabels <- read.table(paste(rootDirectoryName, "/activity_labels.txt", sep=""))
-	activityLables[match(extractedData$Activity.ID, activityLables[,1]),2]
+	activityLabels[match(mergedData$Activity.ID, activityLabels[,1]),2]
 }
 
+## runAnalysisStep4
+##
+## This step was performed in step 1
+##
+
+## runAnalysisStep5
+##
+## Return data frame that has average of each variable for each activity and subject
+##
+runAnalysisStep5 <- function(mergedData) {
+	meltedData <- melt(mergedData, c("Subject.ID", "Activity.Label"))
+	dcast(meltedData, Subject.ID + Activity.Label ~ variable, mean)
+}
